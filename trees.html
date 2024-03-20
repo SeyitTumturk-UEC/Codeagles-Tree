@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Family Trees</title>
+    <link rel="stylesheet" href="trees.css">
+</head>
+
+<body>
+    <header>
+        <h1>Family Trees</h1>
+    </header>
+    <main>
+        <div class="tree-container">
+            <div class="generation generation-root">
+                <div class="family-member" id="root-member">
+                    <p>John Smith<br>Memories: Fishing trips</p>
+                </div>
+            </div>
+            <div class="generation generation-child">
+                <!-- New members will be added here -->
+            </div>
+        </div>
+
+
+        <button onclick="addMemberForm()">Add Family Member</button>
+
+
+
+        <div id="add-member-form" style="display:none;">
+            <div class="form-field">
+                <label for="member-name">Name:</label>
+                <input type="text" id="member-name" placeholder="Member Name">
+            </div>
+            <div class="form-field">
+                <label for="member-memories">Memories:</label>
+                <textarea id="member-memories" placeholder="Memories"></textarea>
+            </div>
+            <div class="form-field">
+                <label for="member-image">Image:</label>
+                <input type="file" id="member-image" accept="image/*">
+            </div>
+
+            <button onclick="addMemberToTree()">Add Member</button>
+        </div>
+
+    </main>
+    <footer>
+        <p>&copy; 2024 Family Tree Website</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+
+</html>

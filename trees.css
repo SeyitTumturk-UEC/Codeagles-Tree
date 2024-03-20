@@ -1,0 +1,93 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 0;
+}
+
+main {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+footer {
+    background-color: #333;
+    color: white;
+    padding: 10px 0;
+    width: 100%;
+}
+
+.family-member {
+    position: relative;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.family-member::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    border-left: 1px solid #000;
+    border-bottom: 1px solid #000;
+    width: 1px;
+    height: 20px;
+}
+
+#add-member-form {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.form-field {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-field label {
+    margin-bottom: 5px;
+}
+
+.member-image {
+    width: 100px;
+    /* Fixed width */
+    height: 100px;
+    /* Fixed height */
+    object-fit: cover;
+    /* Ensures the image covers the area without distorting aspect ratio */
+    border-radius: 50%;
+    /* Optional: makes the image circular */
+    margin-bottom: 10px;
+}
+
+
+
+.tree-container {
+    position: relative;
+    width: 100%;
+    text-align: center;
+}
+
+.generation {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
