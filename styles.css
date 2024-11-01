@@ -129,7 +129,7 @@ body {
 }
 
 .member-card.sibling {
-    margin: 0;
+    margin: 2rem 0;
 }
 
 .member-card.child {
@@ -481,8 +481,9 @@ form input:focus, form textarea:focus {
     justify-content: center;
     gap: 5rem;
     width: fit-content;
-    margin-top: 6rem !important;
+    margin-top: 4rem;
     position: relative;
+    align-items: flex-start;
 }
 
 .generation-container[data-level] {
@@ -496,7 +497,7 @@ form input:focus, form textarea:focus {
     position: relative;
     width: fit-content;
     min-width: 200px;
-    margin: 0 1rem;
+    margin: 0;
 }
 
 .horizontal-container {
@@ -535,7 +536,7 @@ form input:focus, form textarea:focus {
     position: relative;
     width: fit-content;
     min-width: 200px;
-    margin: 0 1rem;
+    margin: 0;
 }
 
 /* Add minimum spacing between sibling groups */
@@ -558,6 +559,7 @@ form input:focus, form textarea:focus {
     gap: 3rem;
     position: relative;
     align-items: flex-start;
+    margin-top: 0;
 }
 
 .generation-container {
