@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Modern Family Tree</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Main container for the family tree -->
+    <div class="container">
+        <div class="tree-container">
+            <div class="tree-header">
+                <h1>Family Tree</h1>
+            </div>
+            <div id="family-tree"></div>
+        </div>
+        
+        <!-- Modal for adding new family members -->
+        <div id="add-member-modal" class="modal">
+            <div class="modal-content">
+                <h2>Add Family Member</h2>
+                <form id="member-form">
+                    <input type="text" id="name" placeholder="Name" required>
+                    <input type="date" id="birthDate" required>
+                    <input type="text" id="location" placeholder="Location">
+                    <textarea id="notes" placeholder="Additional Notes"></textarea>
+                    
+                    <div class="relationship-buttons">
+                        <button type="button" class="relationship-btn" data-relation="parent">Parent</button>
+                        <button type="button" class="relationship-btn" data-relation="child">Child</button>
+                        <button type="button" class="relationship-btn" data-relation="sibling">Sibling</button>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">Add Member</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
