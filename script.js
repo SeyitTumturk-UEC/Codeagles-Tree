@@ -54,7 +54,7 @@ class FamilyTree {
 
         if (!this.rootMember) {
             this.rootMember = member;
-        } else {
+        } else if (relatedToId) {
             const relatedMember = this.members.get(relatedToId);
             this.createRelationship(member, relatedMember, relation);
         }
@@ -131,7 +131,10 @@ class FamilyTree {
         treeContainer.innerHTML = '';
         
         if (this.rootMember) {
-            this.renderMember(this.rootMember, treeContainer, 0, new Set());
+            const rootWrapper = this.renderMember(this.rootMember, treeContainer, 0, new Set());
+            if (rootWrapper) {
+                treeContainer.appendChild(rootWrapper);
+            }
             
             // Create connections after a short delay to ensure DOM is updated
             requestAnimationFrame(() => {
@@ -152,91 +155,48 @@ class FamilyTree {
         const memberWrapper = document.createElement('div');
         memberWrapper.className = 'member-wrapper';
 
-        const horizontalContainer = document.createElement('div');
-        horizontalContainer.className = 'horizontal-container';
-        memberWrapper.appendChild(horizontalContainer);
+        // Create horizontal container for the member and its siblings
+        const memberHorizontalContainer = document.createElement('div');
+        memberHorizontalContainer.className = 'horizontal-container';
+        memberWrapper.appendChild(memberHorizontalContainer);
 
-        // Create the main member card
+        // Add the main member card
         const memberCard = this.createMemberCard(member, level);
-        horizontalContainer.appendChild(memberCard);
+        memberHorizontalContainer.appendChild(memberCard);
 
-        // Create a container for this member's children
-        const childrenContainer = document.createElement('div');
+        // Handle siblings at this level
+        member.siblings.forEach(siblingId => {
+            const sibling = this.members.get(siblingId);
+            if (sibling && !renderedMembers.has(siblingId)) {
+                const siblingCard = this.createMemberCard(sibling, level, true);
+                memberHorizontalContainer.appendChild(siblingCard);
+                renderedMembers.add(siblingId);
+            }
+        });
 
-        // Create a horizontal container specifically for children
-        const childrenHorizontalContainer = document.createElement('div');
-        childrenHorizontalContainer.className = 'horizontal-container';
-        childrenContainer.appendChild(childrenHorizontalContainer);
-
-        // Handle children of the main member
+        // Handle children
         if (member.children.length > 0) {
+            const childrenContainer = document.createElement('div');
+            childrenContainer.className = 'children-container';
+            
+            const childrenHorizontalContainer = document.createElement('div');
+            childrenHorizontalContainer.className = 'horizontal-container';
+            childrenContainer.appendChild(childrenHorizontalContainer);
+
+            // Render all children at this level horizontally
             member.children.forEach(childId => {
                 const child = this.members.get(childId);
                 if (child && !renderedMembers.has(childId)) {
-                    const childWrapper = document.createElement('div');
-                    childWrapper.className = 'member-wrapper';
-                    
-                    const childCard = this.createMemberCard(child, level + 1);
-                    childWrapper.appendChild(childCard);
-                    childrenHorizontalContainer.appendChild(childWrapper);
-                    
-                    // Recursively render children of this child
-                    if (child.children.length > 0) {
-                        const grandchildrenContainer = document.createElement('div');
-                        grandchildrenContainer.className = 'children-container';
-                        childWrapper.appendChild(grandchildrenContainer);
-                        
-                        child.children.forEach(grandchildId => {
-                            const grandchild = this.members.get(grandchildId);
-                            if (grandchild && !renderedMembers.has(grandchildId)) {
-                                const grandchildCard = this.renderMember(grandchild, grandchildrenContainer, level + 2, renderedMembers);
-                                if (grandchildCard) {
-                                    grandchildrenContainer.appendChild(grandchildCard);
-                                }
-                            }
-                        });
-                    }
-                    renderedMembers.add(childId);
-                }
-            });
-        }
-
-        // Handle siblings
-        if (member.siblings.length > 0) {
-            member.siblings.forEach(siblingId => {
-                const sibling = this.members.get(siblingId);
-                if (sibling && !renderedMembers.has(siblingId)) {
-                    const siblingCard = this.createMemberCard(sibling, level, true);
-                    horizontalContainer.appendChild(siblingCard);
-                    renderedMembers.add(siblingId);
-
-                    // Create a separate children container for each sibling
-                    const siblingChildrenContainer = document.createElement('div');
-                    siblingChildrenContainer.className = 'children-container';
-                    
-                    // Render children of siblings
-                    if (sibling.children.length > 0) {
-                        sibling.children.forEach(childId => {
-                            const child = this.members.get(childId);
-                            if (child && !renderedMembers.has(childId)) {
-                                const childCard = this.renderMember(child, siblingChildrenContainer, level + 1, renderedMembers);
-                                if (childCard) {
-                                    siblingChildrenContainer.appendChild(childCard);
-                                }
-                            }
-                        });
-                    }
-                    
-                    // Only append the children container if it has children
-                    if (siblingChildrenContainer.children.length > 0) {
-                        memberWrapper.appendChild(siblingChildrenContainer);
+                    const childMember = this.renderMember(child, childrenHorizontalContainer, level + 1, renderedMembers);
+                    if (childMember) {
+                        childrenHorizontalContainer.appendChild(childMember);
                     }
                 }
             });
+
+            memberWrapper.appendChild(childrenContainer);
         }
 
-        memberWrapper.appendChild(childrenContainer);
-        container.appendChild(memberWrapper);
         return memberWrapper;
     }
 
@@ -272,7 +232,10 @@ class FamilyTree {
             <button class="add-member-btn">+</button>
         `;
 
-        container.appendChild(emptyRoot);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'member-wrapper';
+        wrapper.appendChild(emptyRoot);
+        container.appendChild(wrapper);
 
         emptyRoot.querySelector('.add-member-btn').addEventListener('click', () => {
             this.openModal();
