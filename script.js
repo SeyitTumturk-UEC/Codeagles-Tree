@@ -168,8 +168,35 @@ class FamilyTree {
         member.siblings.forEach(siblingId => {
             const sibling = this.members.get(siblingId);
             if (sibling && !renderedMembers.has(siblingId)) {
+                const siblingWrapper = document.createElement('div');
+                siblingWrapper.className = 'member-wrapper';
+                
                 const siblingCard = this.createMemberCard(sibling, level, true);
-                memberHorizontalContainer.appendChild(siblingCard);
+                siblingWrapper.appendChild(siblingCard);
+                
+                // Handle children of siblings
+                if (sibling.children.length > 0) {
+                    const siblingChildrenContainer = document.createElement('div');
+                    siblingChildrenContainer.className = 'children-container';
+                    
+                    const siblingChildrenHorizontalContainer = document.createElement('div');
+                    siblingChildrenHorizontalContainer.className = 'horizontal-container';
+                    siblingChildrenContainer.appendChild(siblingChildrenHorizontalContainer);
+
+                    sibling.children.forEach(childId => {
+                        const child = this.members.get(childId);
+                        if (child && !renderedMembers.has(childId)) {
+                            const childMember = this.renderMember(child, siblingChildrenHorizontalContainer, level + 1, renderedMembers);
+                            if (childMember) {
+                                siblingChildrenHorizontalContainer.appendChild(childMember);
+                            }
+                        }
+                    });
+                    
+                    siblingWrapper.appendChild(siblingChildrenContainer);
+                }
+                
+                memberHorizontalContainer.appendChild(siblingWrapper);
                 renderedMembers.add(siblingId);
             }
         });
