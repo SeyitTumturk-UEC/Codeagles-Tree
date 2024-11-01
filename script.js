@@ -79,23 +79,29 @@ class FamilyTree {
                 existingMember.parents.push(newMember.id);
                 break;
             case 'sibling':
-                // Connect siblings to each other and to their common parent
-                existingMember.siblings.forEach(siblingId => {
-                    const sibling = this.members.get(siblingId);
-                    if (sibling) {
-                        sibling.siblings.push(newMember.id);
-                        newMember.siblings.push(sibling.id);
-                    }
-                });
-                existingMember.siblings.push(newMember.id);
-                newMember.siblings.push(existingMember.id);
-
-                // Connect new sibling to the parents of the existing sibling
-                existingMember.parents.forEach(parentId => {
+                // First, find the parent of the existing sibling
+                const parentId = existingMember.parents[0];
+                if (parentId) {
                     const parent = this.members.get(parentId);
                     if (parent) {
+                        // Add new member as a child of the parent
                         parent.children.push(newMember.id);
-                        newMember.parents.push(parent.id);
+                        newMember.parents.push(parentId);
+                    }
+                }
+
+                // Connect siblings to each other
+                existingMember.siblings.push(newMember.id);
+                newMember.siblings.push(existingMember.id);
+                
+                // Connect to other existing siblings
+                existingMember.siblings.forEach(siblingId => {
+                    if (siblingId !== newMember.id) {
+                        const sibling = this.members.get(siblingId);
+                        if (sibling) {
+                            sibling.siblings.push(newMember.id);
+                            newMember.siblings.push(sibling.id);
+                        }
                     }
                 });
                 break;
@@ -154,74 +160,113 @@ class FamilyTree {
 
         const memberWrapper = document.createElement('div');
         memberWrapper.className = 'member-wrapper';
+        memberWrapper.dataset.level = level;
 
         // Create horizontal container for the member and its siblings
         const memberHorizontalContainer = document.createElement('div');
         memberHorizontalContainer.className = 'horizontal-container';
+        memberHorizontalContainer.dataset.level = level;
         memberWrapper.appendChild(memberHorizontalContainer);
 
         // Add the main member card
         const memberCard = this.createMemberCard(member, level);
-        memberHorizontalContainer.appendChild(memberCard);
+        const cardWrapper = document.createElement('div');
+        cardWrapper.className = 'card-wrapper';
+        cardWrapper.appendChild(memberCard);
+        memberHorizontalContainer.appendChild(cardWrapper);
 
-        // Handle siblings at this level
-        member.siblings.forEach(siblingId => {
-            const sibling = this.members.get(siblingId);
-            if (sibling && !renderedMembers.has(siblingId)) {
-                const siblingWrapper = document.createElement('div');
-                siblingWrapper.className = 'member-wrapper';
-                
-                const siblingCard = this.createMemberCard(sibling, level, true);
-                siblingWrapper.appendChild(siblingCard);
-                
-                // Handle children of siblings
-                if (sibling.children.length > 0) {
-                    const siblingChildrenContainer = document.createElement('div');
-                    siblingChildrenContainer.className = 'children-container';
-                    
-                    const siblingChildrenHorizontalContainer = document.createElement('div');
-                    siblingChildrenHorizontalContainer.className = 'horizontal-container';
-                    siblingChildrenContainer.appendChild(siblingChildrenHorizontalContainer);
+        // Create a container for all children at this generation level
+        const generationContainer = document.createElement('div');
+        generationContainer.className = 'generation-container';
+        generationContainer.dataset.level = level + 1;
 
-                    sibling.children.forEach(childId => {
-                        const child = this.members.get(childId);
-                        if (child && !renderedMembers.has(childId)) {
-                            const childMember = this.renderMember(child, siblingChildrenHorizontalContainer, level + 1, renderedMembers);
-                            if (childMember) {
-                                siblingChildrenHorizontalContainer.appendChild(childMember);
-                            }
-                        }
-                    });
-                    
-                    siblingWrapper.appendChild(siblingChildrenContainer);
-                }
-                
-                memberHorizontalContainer.appendChild(siblingWrapper);
-                renderedMembers.add(siblingId);
+        // Collect all children from member and siblings
+        const allChildren = new Map();
+        
+        // Add member's children first to maintain order
+        member.children.forEach(childId => {
+            if (!renderedMembers.has(childId)) {
+                allChildren.set(childId, {
+                    child: this.members.get(childId),
+                    parentId: member.id
+                });
             }
         });
 
-        // Handle children
-        if (member.children.length > 0) {
-            const childrenContainer = document.createElement('div');
-            childrenContainer.className = 'children-container';
-            
-            const childrenHorizontalContainer = document.createElement('div');
-            childrenHorizontalContainer.className = 'horizontal-container';
-            childrenContainer.appendChild(childrenHorizontalContainer);
+        // Handle siblings and their children
+        member.siblings.forEach(siblingId => {
+            const sibling = this.members.get(siblingId);
+            if (sibling && !renderedMembers.has(siblingId)) {
+                const siblingCard = this.createMemberCard(sibling, level, true);
+                const siblingCardWrapper = document.createElement('div');
+                siblingCardWrapper.className = 'card-wrapper';
+                siblingCardWrapper.appendChild(siblingCard);
+                memberHorizontalContainer.appendChild(siblingCardWrapper);
+                renderedMembers.add(siblingId);
 
-            // Render all children at this level horizontally
-            member.children.forEach(childId => {
-                const child = this.members.get(childId);
-                if (child && !renderedMembers.has(childId)) {
-                    const childMember = this.renderMember(child, childrenHorizontalContainer, level + 1, renderedMembers);
-                    if (childMember) {
-                        childrenHorizontalContainer.appendChild(childMember);
+                // Add sibling's children to the map
+                sibling.children.forEach(childId => {
+                    if (!renderedMembers.has(childId)) {
+                        allChildren.set(childId, {
+                            child: this.members.get(childId),
+                            parentId: siblingId
+                        });
                     }
+                });
+            }
+        });
+
+        // Update the sorting of children to maintain parent alignment
+        if (allChildren.size > 0) {
+            const sortedChildren = Array.from(allChildren.entries()).sort((a, b) => {
+                const parentA = this.members.get(a[1].parentId);
+                const parentB = this.members.get(b[1].parentId);
+                
+                // Get the horizontal position of parents in the DOM
+                const parentACard = document.querySelector(`.member-card[data-id='${parentA.id}']`);
+                const parentBCard = document.querySelector(`.member-card[data-id='${parentB.id}']`);
+                
+                if (parentACard && parentBCard) {
+                    // Compare parent positions to maintain alignment
+                    const rectA = parentACard.getBoundingClientRect();
+                    const rectB = parentBCard.getBoundingClientRect();
+                    return rectA.left - rectB.left;
                 }
+                
+                // Fallback to previous sorting if elements not found
+                if (a[1].parentId === member.id && b[1].parentId !== member.id) return -1;
+                if (a[1].parentId !== member.id && b[1].parentId === member.id) return 1;
+                return a[0] - b[0];
             });
 
-            memberWrapper.appendChild(childrenContainer);
+            // Create a map to group children by their parent
+            const childrenByParent = new Map();
+            sortedChildren.forEach(([childId, {child, parentId}]) => {
+                if (!childrenByParent.has(parentId)) {
+                    childrenByParent.set(parentId, []);
+                }
+                childrenByParent.get(parentId).push(child);
+            });
+
+            // Create separate containers for each parent's children
+            childrenByParent.forEach((children, parentId) => {
+                const parentChildrenContainer = document.createElement('div');
+                parentChildrenContainer.className = 'parent-children-group';
+                parentChildrenContainer.dataset.parentId = parentId;
+                
+                children.forEach(child => {
+                    if (!renderedMembers.has(child.id)) {
+                        const childMember = this.renderMember(child, parentChildrenContainer, level + 1, renderedMembers);
+                        if (childMember) {
+                            parentChildrenContainer.appendChild(childMember);
+                        }
+                    }
+                });
+                
+                generationContainer.appendChild(parentChildrenContainer);
+            });
+
+            memberWrapper.appendChild(generationContainer);
         }
 
         return memberWrapper;
@@ -296,6 +341,9 @@ class FamilyTree {
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttribute("id", connectionId);
         svg.classList.add('connection-svg');
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", "100%");
+        svg.setAttribute("preserveAspectRatio", "none");
 
         // Get positions relative to the viewport and account for scale
         const viewportRect = this.viewport.getBoundingClientRect();
@@ -308,26 +356,34 @@ class FamilyTree {
         const endX = ((toRect.left + toRect.width / 2) - viewportRect.left) / this.scale;
         const endY = (toRect.top - viewportRect.top) / this.scale;
 
-        // Create curved path with scaled coordinates
+        // Calculate control points for the curve
         const deltaX = endX - startX;
         const deltaY = endY - startY;
-        const controlX1 = startX + deltaX / 4;
-        const controlY1 = startY + deltaY / 2;
-        const controlX2 = startX + 3 * deltaX / 4;
-        const controlY2 = startY + deltaY / 2;
-
-        const pathD = `M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX} ${endY}`;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        // Adjust curve intensity based on distance
+        const curveIntensity = Math.min(distance * 0.2, 100);
+        
+        // Create a natural curved path
+        const pathD = `
+            M ${startX} ${startY}
+            C ${startX} ${startY + curveIntensity},
+              ${endX} ${endY - curveIntensity},
+              ${endX} ${endY}
+        `;
 
         // Create glow effect
         const glowPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
         glowPath.classList.add('glow-path');
         glowPath.setAttribute("d", pathD);
+        glowPath.setAttribute("vector-effect", "non-scaling-stroke");
         svg.appendChild(glowPath);
 
         // Create main path
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.classList.add('connection-path');
         path.setAttribute("d", pathD);
+        path.setAttribute("vector-effect", "non-scaling-stroke");
         svg.appendChild(path);
 
         svgContainer.appendChild(svg);
@@ -338,23 +394,13 @@ class FamilyTree {
         this.members.forEach(member => {
             const memberCard = document.querySelector(`.member-card[data-id='${member.id}']`);
             
-            // Create parent-child connections
+            // Only create parent-child connections
             member.children.forEach(childId => {
                 const childCard = document.querySelector(`.member-card[data-id='${childId}']`);
                 if (memberCard && childCard) {
                     this.createCurvedConnection(memberCard, childCard);
                 }
             });
-
-            // Create parent-sibling connections
-            if (member.parents.length > 0) {
-                member.parents.forEach(parentId => {
-                    const parentCard = document.querySelector(`.member-card[data-id='${parentId}']`);
-                    if (parentCard && memberCard) {
-                        this.createCurvedConnection(parentCard, memberCard);
-                    }
-                });
-            }
         });
     }
 

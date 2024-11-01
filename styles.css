@@ -253,6 +253,8 @@ form input, form textarea {
     animation: drawLine 1.5s ease forwards;
     stroke-linecap: round;
     stroke-linejoin: round;
+    pointer-events: none;
+    vector-effect: non-scaling-stroke;
 }
 
 .glow-path {
@@ -262,6 +264,8 @@ form input, form textarea {
     filter: blur(6px);
     opacity: 0.4;
     animation: drawLine 1.5s ease forwards, glowPulse 2s ease-in-out infinite;
+    pointer-events: none;
+    vector-effect: non-scaling-stroke;
 }
 
 @keyframes drawLine {
@@ -304,10 +308,10 @@ form input, form textarea {
     display: flex;
     flex-direction: row;
     justify-content: center;
-    gap: 3rem;
+    gap: 5rem;
     width: fit-content;
     position: relative;
-    margin: 1rem 0;
+    align-items: flex-start;
 }
 
 .member-wrapper {
@@ -315,9 +319,8 @@ form input, form textarea {
     flex-direction: column;
     align-items: center;
     position: relative;
-    margin: 0 1rem;
     width: fit-content;
-    height: fit-content;
+    margin: 0 2rem;
 }
 
 .children-container .horizontal-container {
@@ -395,4 +398,118 @@ form input, form textarea {
     height: auto;
     position: relative;
     top: 0;
+}
+
+/* Add these rules to align children at the same level */
+.children-container[data-level] {
+    margin-top: 4rem !important;
+}
+
+.member-wrapper[data-level] {
+    align-self: flex-start;
+}
+
+.horizontal-container {
+    align-items: flex-start;
+}
+
+/* Ensure consistent vertical spacing */
+.children-container {
+    margin-top: 4rem;
+}
+
+/* Add generation container styles */
+.generation-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 5rem;
+    width: fit-content;
+    margin-top: 4rem;
+    position: relative;
+}
+
+.generation-container[data-level] {
+    margin-top: 4rem !important;
+}
+
+.card-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    width: fit-content;
+    min-width: 200px;
+    margin: 0 1rem;
+}
+
+.horizontal-container {
+    justify-content: space-around;
+    width: fit-content;
+    min-width: max-content;
+}
+
+/* Update horizontal container spacing */
+.horizontal-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 5rem;
+    width: fit-content;
+    position: relative;
+    align-items: flex-start;
+}
+
+/* Update generation container spacing */
+.generation-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 5rem;
+    width: fit-content;
+    margin-top: 4rem;
+    position: relative;
+}
+
+/* Update card wrapper spacing */
+.card-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    width: fit-content;
+    min-width: 200px;
+    margin: 0 1rem;
+}
+
+/* Add minimum spacing between sibling groups */
+.member-wrapper {
+    margin: 0 2rem;
+}
+
+/* Ensure consistent spacing at all levels */
+.children-container .horizontal-container,
+.generation-container[data-level],
+.horizontal-container[data-level] {
+    gap: 5rem !important;
+    margin: 4rem 0;
+}
+
+/* Add styles for parent-children grouping */
+.parent-children-group {
+    display: flex;
+    flex-direction: row;
+    gap: 3rem;
+    position: relative;
+    align-items: flex-start;
+}
+
+.generation-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+    gap: 2rem;
+    margin-top: 4rem;
+    position: relative;
 }
