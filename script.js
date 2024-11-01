@@ -112,23 +112,55 @@ class FamilyTree {
     handleFormSubmit(e) {
         e.preventDefault();
         
-        const formData = new FormData(e.target);
-        const member = new FamilyMember(
-            formData.get('name'),
-            formData.get('birthDate'),
-            formData.get('location'),
-            formData.get('notes')
-        );
+        const name = document.getElementById('name').value;
+        const birthDate = document.getElementById('birthDate').value;
+        const location = document.getElementById('location').value;
+        const notes = document.getElementById('notes').value;
+        const photoInput = document.getElementById('photo');
+        
+        // Handle photo upload
+        const file = photoInput.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const member = new FamilyMember(
+                    name,
+                    birthDate,
+                    location,
+                    notes
+                );
+                member.photoUrl = e.target.result;
 
-        if (!this.selectedRelation) {
-            alert('Please select a relationship type');
-            return;
+                if (!this.selectedRelation) {
+                    alert('Please select a relationship type');
+                    return;
+                }
+
+                this.addMember(member, this.selectedRelation, this.selectedMemberId);
+                this.closeModal();
+                photoInput.value = '';
+                document.getElementById('member-form').reset();
+                this.selectedRelation = null;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            const member = new FamilyMember(
+                name,
+                birthDate,
+                location,
+                notes
+            );
+            
+            if (!this.selectedRelation) {
+                alert('Please select a relationship type');
+                return;
+            }
+
+            this.addMember(member, this.selectedRelation, this.selectedMemberId);
+            this.closeModal();
+            document.getElementById('member-form').reset();
+            this.selectedRelation = null;
         }
-
-        this.addMember(member, this.selectedRelation, this.selectedMemberId);
-        this.closeModal();
-        e.target.reset();
-        this.selectedRelation = null;
     }
 
     // Render the family tree
@@ -276,20 +308,38 @@ class FamilyTree {
     createMemberCard(member, level, isSibling = false) {
         const card = document.createElement('div');
         card.className = `member-card${isSibling ? ' sibling' : ''}`;
+        
+        // Default avatar if no image uploaded
+        const defaultAvatar = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b46c1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E`;
+        
         card.innerHTML = `
-            <h3>${member.name}</h3>
-            <p>Birth Date: ${new Date(member.birthDate).toLocaleDateString()}</p>
-            <p>Location: ${member.location}</p>
-            <p>Notes: ${member.notes}</p>
+            <div class="member-name-container">
+                <span class="member-name">${member.name}</span>
+            </div>
+            <div class="member-image-container">
+                <img src="${member.photoUrl || defaultAvatar}" alt="${member.name}" class="member-photo">
+            </div>
+            <div class="quick-info">
+                <p><strong>${member.name}</strong></p>
+                <p>Born: ${new Date(member.birthDate).toLocaleDateString()}</p>
+                <p>${member.location || 'Location unknown'}</p>
+            </div>
             <button class="add-member-btn">+</button>
         `;
+        
         card.dataset.id = member.id;
         card.dataset.level = level;
 
         // Add member button click handler
-        card.querySelector('.add-member-btn').addEventListener('click', () => {
+        card.querySelector('.add-member-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
             this.selectedMemberId = member.id;
             this.openModal();
+        });
+
+        // Add click handler for info modal
+        card.addEventListener('click', () => {
+            this.openInfoModal(member);
         });
 
         return card;
@@ -300,7 +350,7 @@ class FamilyTree {
         const emptyRoot = document.createElement('div');
         emptyRoot.className = 'member-card empty-root';
         emptyRoot.innerHTML = `
-            <p>Start Your Family Tree</p>
+            <p>Root</p>
             <button class="add-member-btn">+</button>
         `;
 
@@ -349,22 +399,29 @@ class FamilyTree {
         const viewportRect = this.viewport.getBoundingClientRect();
         const fromRect = fromCard.getBoundingClientRect();
         const toRect = toCard.getBoundingClientRect();
+        
+        // Get the name container of the target card
+        const toNameContainer = toCard.querySelector('.member-name-container');
+        const nameContainerRect = toNameContainer.getBoundingClientRect();
 
         // Calculate positions accounting for scale and transform
         const startX = ((fromRect.left + fromRect.width / 2) - viewportRect.left) / this.scale;
-        const startY = (fromRect.bottom - viewportRect.top) / this.scale;
         const endX = ((toRect.left + toRect.width / 2) - viewportRect.left) / this.scale;
-        const endY = (toRect.top - viewportRect.top) / this.scale;
+        
+        // Start from the bottom of the first card
+        const startY = (fromRect.bottom - viewportRect.top - 5) / this.scale;
+        
+        // End at the TOP of the name container
+        const endY = (nameContainerRect.top - viewportRect.top) / this.scale;
 
         // Calculate control points for the curve
         const deltaX = endX - startX;
         const deltaY = endY - startY;
         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         
-        // Adjust curve intensity based on distance
-        const curveIntensity = Math.min(distance * 0.2, 100);
+        // Increase curve intensity for more noticeable curves
+        const curveIntensity = Math.min(distance * 0.2, 50);  // Increased from 0.05 to 0.2, max from 10 to 50
         
-        // Create a natural curved path
         const pathD = `
             M ${startX} ${startY}
             C ${startX} ${startY + curveIntensity},
@@ -509,6 +566,48 @@ class FamilyTree {
         // Recalculate connections after transform
         requestAnimationFrame(() => {
             this.createConnections();
+        });
+    }
+
+    // Add new method to handle info modal
+    openInfoModal(member) {
+        let infoModal = document.getElementById('info-modal');
+        if (!infoModal) {
+            infoModal = document.createElement('div');
+            infoModal.id = 'info-modal';
+            infoModal.className = 'info-modal';
+            document.body.appendChild(infoModal);
+        }
+
+        const photoUrl = `https://i.pravatar.cc/300?u=${member.id}`;
+        
+        infoModal.innerHTML = `
+            <div class="info-modal-content">
+                <button class="close-modal-btn">&times;</button>
+                <div class="info-modal-header">
+                    <img src="${photoUrl}" alt="${member.name}" class="info-modal-photo">
+                    <h2 class="info-modal-name">${member.name}</h2>
+                </div>
+                <div class="info-modal-details">
+                    <p><strong>Birth Date:</strong> ${new Date(member.birthDate).toLocaleDateString()}</p>
+                    <p><strong>Location:</strong> ${member.location || 'Unknown'}</p>
+                    <p><strong>Notes:</strong> ${member.notes || 'No notes available'}</p>
+                </div>
+            </div>
+        `;
+
+        infoModal.style.display = 'block';
+
+        // Close modal handlers
+        const closeBtn = infoModal.querySelector('.close-modal-btn');
+        closeBtn.addEventListener('click', () => {
+            infoModal.style.display = 'none';
+        });
+
+        infoModal.addEventListener('click', (e) => {
+            if (e.target === infoModal) {
+                infoModal.style.display = 'none';
+            }
         });
     }
 }
